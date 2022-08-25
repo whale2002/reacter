@@ -2,7 +2,7 @@ import { createStore, applyMiddleware } from "redux";
 // import logger from "redux-logger";
 // import thunk from "redux-thunk";
 
-function countReducer(state = 0, action) {
+export function countReducer(state = 0, action) {
   switch (action.type) {
     case "ADD":
       return state + 1;
