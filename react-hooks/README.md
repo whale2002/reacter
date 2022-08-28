@@ -1,70 +1,194 @@
-# Getting Started with Create React App
+# mini React-hooks
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+:star: [Github repo](https://github.com/whale2002/reacter/tree/master/react-hooks)
 
-## Available Scripts
+```js
+let hookStates = []; // 记录所有状态的数组
+let hookIndex = 0;
+```
 
-In the project directory, you can run:
+## useState
 
-### `npm start`
+```js
+function useState(initialState) {
+  hookState[hookIndex] = hookState[hookIndex] || initialState
+  
+  // 利用闭包，保证setState拿到的是自己的索引
+  let currentIndex = hookIndex
+  function setState(newState) {
+    hookState[currentIndex] = newState
+    render()
+  }
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+  return [hookState[hookIndex++], setState]
+}
+```
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## useReducer
 
-### `npm test`
+```js
+function useReducer(reducer, initialState) {
+  hookStates[hookIndex] = hookStates[hookIndex] || initialState;
+  let currentIndex = hookIndex;
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+  function dispatch(action) {
+    hookStates[currentIndex] = reducer
+      ? reducer(hookStates[currentIndex], action)
+      : action;
+    render();
+  }
+  return [hookStates[hookIndex++], dispatch];
+}
+```
 
-### `npm run build`
+## useMemo
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```js
+function useMemo(factory, deps) {
+  if (hookStates[hookIndex]) {
+    // 缓存过了
+    let [lastMemo, lastDeps] = hookStates[hookIndex];
+    // 依赖是否发生变化
+    let same = deps.every((item, index) => item === lastDeps[index]);
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+    if (same) {
+      // 依赖不变
+      hookIndex++;
+      return lastMemo;
+    } else {
+      // 依赖发生变化
+      let newMemo = factory();
+      hookStates[hookIndex++] = [newMemo, deps];
+      return newMemo;
+    }
+  }
+  // 第一次执行useMemo
+  else {
+    let newMemo = factory();
+    hookStates[hookIndex++] = [newMemo, deps];
+    return newMemo;
+  }
+}
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## useCallback
 
-### `npm run eject`
+```js
+function useCallback(callback, deps) {
+  if (hookStates[hookIndex]) {
+    // 缓存过了
+    let [lastCallback, lastDeps] = hookStates[hookIndex];
+    // 依赖是否发生变化
+    let same = deps.every((item, index) => item === lastDeps[index]);
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+    if (same) {
+      // 依赖不变
+      hookIndex++;
+      return lastCallback;
+    } else {
+      // 依赖发生变化
+      hookStates[hookIndex++] = [callback, deps];
+      return callback;
+    }
+  }
+  // 第一次执行useCallback
+  else {
+    hookStates[hookIndex++] = [callback, deps];
+    return callback;
+  }
+}
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## useEffect
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+```js
+function useEffect(callback, deps) {
+  if (hookStates[hookIndex]) {
+    let [lastDestroy, lastDeps] = hookStates[hookIndex];
+    let same = false;
+    if (lastDeps) {
+      // 空依赖也走这里
+      same = deps.every((item, index) => item === lastDeps[index]);
+    }
+    if (same) {
+      // 依赖没有发生变化，继续执行
+      hookIndex++;
+    } else {
+      lastDestroy && lastDestroy();
+      let arr = [, deps];
+      setTimeout(() => {
+        arr[0] = callback();
+      });
+      hookStates[hookIndex++] = arr;
+    }
+  }
+  // 第一次调用useEffect，hookStates[hookIndex]不存在
+  else {
+    let arr = [, deps];
+    setTimeout(() => {
+      arr[0] = callback();
+    });
+    hookStates[hookIndex++] = arr;
+  }
+}
+```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## useLayoutEffect
 
-## Learn More
+```js
+function useLayoutEffect(callback, deps) {
+  if (hookStates[hookIndex]) {
+    let [lastDestroy, lastDeps] = hookStates[hookIndex];
+    let same = false;
+    if (lastDeps) {
+      // 空依赖也走这里
+      same = deps.every((item, index) => item === lastDeps[index]);
+    }
+    if (same) {
+      // 依赖没有发生变化，继续执行
+      hookIndex++;
+    } else {
+      lastDestroy && lastDestroy();
+      let arr = [, deps];
+      queueMicrotask(() => {
+        arr[0] = callback();
+      });
+      hookStates[hookIndex++] = arr;
+    }
+  }
+  // 第一次调用useEffect，hookStates[hookIndex]不存在
+  else {
+    let arr = [, deps];
+    queueMicrotask(() => {
+      arr[0] = callback();
+    });
+    hookStates[hookIndex++] = arr;
+  }
+}
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## useRef
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+```js
+function useRef(initialState) {
+  hookStates[hookIndex] = hookStates[hookIndex] || { current: initialState };
+  return hookStates[hookIndex++];
+}
+```
 
-### Code Splitting
+## useContext
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+```js
+function useContext(context) {
+  return context._currentValue;
+}
+```
 
-### Analyzing the Bundle Size
+## useImperativeHandle
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+```js
+function useImperativeHandle(ref, handle) {
+  ref.current = handle();
+}
+```
 
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
