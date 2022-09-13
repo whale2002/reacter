@@ -1,0 +1,3 @@
+- 支持 react-router 路由
+- 支持 redux 状态管理
+- 支持 SSR 和 CSR 共存
