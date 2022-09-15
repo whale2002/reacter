@@ -1,6 +1,6 @@
 export default function createStore(reducer, enhancer) {
-  if(enhancer) {
-    enhancer(createStore)(reducer)
+  if (enhancer) {
+    return enhancer(createStore)(reducer);
   }
 
   let currentState;

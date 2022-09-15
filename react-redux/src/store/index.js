@@ -1,6 +1,4 @@
 import { createStore, applyMiddleware } from "redux";
-// import logger from "redux-logger";
-// import thunk from "redux-thunk";
 
 export function countReducer(state = 0, action) {
   switch (action.type) {
@@ -17,6 +15,16 @@ const store = createStore(countReducer, applyMiddleware(thunk, logger));
 
 export default store;
 
+function thunk({ getState, dispatch }) {
+  return (next) => (action) => {
+    if (typeof action === "function") {
+      // 执行函数，返回action
+      return action(dispatch, getState);
+    }
+
+    return next(action);
+  };
+}
 function logger({ getState, dispatch }) {
   return (next) => (action) => {
     console.log("------------");
@@ -34,15 +42,5 @@ function logger({ getState, dispatch }) {
     console.log("------------");
 
     return returnValue;
-  };
-}
-
-function thunk({ getState, dispatch }) {
-  return (next) => (action) => {
-    if (typeof action === "function") {
-      return action(dispatch, getState);
-    }
-
-    return next(action);
   };
 }
