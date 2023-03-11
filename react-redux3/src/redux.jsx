@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState, createContext } from "react";
+import React, { useEffect, useState, createContext } from "react";
 
 // 核心 createStore， connect， Provider
 
@@ -42,6 +42,18 @@ export const store = {
   },
 };
 
+let dispatch = store.dispatch;
+
+const prevDispatch = dispatch;
+
+dispatch = (action) => {
+  if (action instanceof Function) {
+    action(dispatch);
+  } else {
+    prevDispatch(action); // 对象 type payload
+  }
+};
+
 export const createStore = (_reducer, initState) => {
   state = initState;
   reducer = _reducer;
@@ -52,7 +64,6 @@ export const createStore = (_reducer, initState) => {
 export const connect = (selector, dispatchSelectors) => (Component) => {
   return (props) => {
     const [, update] = useState({});
-    const { dispatch } = store;
 
     const data = selector ? selector(state) : { state };
     const dispatchers = dispatchSelectors

@@ -22,6 +22,20 @@ const initState = {
 
 const store = createStore(reducer, initState);
 
+const ajax = () => {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      resolve({ data: { name: "3秒后的frank" } });
+    }, 3000);
+  });
+};
+
+const fetchUser = (dispatch) => {
+  ajax("/user").then((response) => {
+    dispatch({ type: "updateUser", payload: response.data });
+  });
+};
+
 const App = () => {
   return (
     <Provider store={store}>
@@ -63,10 +77,19 @@ const 幺儿子 = connect((state) => {
 
 const User = connect((state) => {
   return { user: state.user };
-}, null)(({ user }) => {
+}, null)(({ user, dispatch }) => {
   console.log("User执行了 " + Math.random());
 
-  return <div>User:{user.name}</div>;
+  const onClick = () => {
+    dispatch(fetchUser);
+  };
+
+  return (
+    <div>
+      User:{user.name}
+      <button onClick={onClick}>点击执行异步函数</button>
+    </div>
+  );
 });
 
 const UserModifier = connect(null, (dispatch) => {
